@@ -182,60 +182,71 @@ function extractContactInfo(message) {
 }
 
 function escapeHTML(str) {
-  if(!str) return "";
-  return str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+  if (!str) return "";
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 /* --------- Send to Google Sheets --------- */
 async function sendToGoogleSheets(data) {
   if (data.isDataCaptured && data._alreadySent) return;
   try {
-    const url = `${GOOGLE_SCRIPT_URL}?` +
-                `phone=${encodeURIComponent(data.phone||"")}` +
-                `&email=${encodeURIComponent(data.email||"")}` +
-                `&course=${encodeURIComponent(data.course||"")}` +
-                `&service=${encodeURIComponent(data.service||"")}` +
-                `&timestamp=${encodeURIComponent(new Date().toISOString())}`;
+    const url =
+      `${GOOGLE_SCRIPT_URL}?` +
+      `phone=${encodeURIComponent(data.phone || "")}` +
+      `&email=${encodeURIComponent(data.email || "")}` +
+      `&course=${encodeURIComponent(data.course || "")}` +
+      `&service=${encodeURIComponent(data.service || "")}` +
+      `&timestamp=${encodeURIComponent(new Date().toISOString())}`;
 
-    const res = await fetch(url, { method: 'GET' });
+    const res = await fetch(url, { method: "GET" });
     if (res.ok) {
-      console.log('Sheet saved');
+      console.log("Sheet saved");
       data._alreadySent = true;
       return true;
     } else {
-      console.error('Sheet save failed', res.status);
+      console.error("Sheet save failed", res.status);
       return false;
     }
   } catch (err) {
-    console.error('Error saving to sheet', err);
+    console.error("Error saving to sheet", err);
     return false;
   }
 }
 
 /* --------- Show course options --------- */
 function showCourseOptions() {
-  if (document.querySelector('.course-widget')) return;
-  const chat = document.querySelector('.chat-window .chat');
-  let html = `<div class="model course-widget"><p>Select a course you’re interested in:</p><form id="courseForm">`;
+  if (document.querySelector(".course-widget")) return;
+  const chat = document.querySelector(".chat-window .chat");
+  let html = `<div class="model course-widget"><p>Select a course you’re interested in:</p>`;
   coursesOffered.forEach(c => {
-    html += `<label><input type="checkbox" name="course" value="${escapeHTML(c.name)}"> ${escapeHTML(c.name)}</label><br>`;
+    html += `<label><input type="radio" name="course" value="${escapeHTML(c.name)}"> ${escapeHTML(c.name)}</label><br>`;
   });
-  html += `</form></div>`;
-  chat.insertAdjacentHTML('beforeend', html);
+  html += `</div>`;
+  chat.insertAdjacentHTML("beforeend", html);
 
-  // Auto-show details on selection
-  document.querySelectorAll('#courseForm input[name="course"]').forEach(el => {
-    el.addEventListener('change', async () => {
-      const selected = Array.from(document.querySelectorAll('#courseForm input[name="course"]:checked')).map(x => x.value);
-      userData.course = selected.join(', ');
-      let detailsHtml = '<div class="model"><p>';
-      selected.forEach(n => {
-        const info = (coursesOffered.find(c => c.name === n) || {}).details || 'Details coming soon.';
-        detailsHtml += `<b>${escapeHTML(n)}</b>: ${escapeHTML(info)}<br><br>`;
-      });
-      detailsHtml += '</p></div>';
-      chat.insertAdjacentHTML("beforeend", detailsHtml);
+  document.querySelectorAll('input[name="course"]').forEach(input => {
+    input.addEventListener("change", async e => {
+      const selected = e.target.value;
+      userData.course = selected;
+      const info =
+        (coursesOffered.find(c => c.name === selected) || {}).details ||
+        "Details coming soon.";
+      chat.insertAdjacentHTML(
+        "beforeend",
+        `<div class="model"><p><b>${escapeHTML(selected)}</b>: ${escapeHTML(
+          info
+        )}</p></div>`
+      );
       await sendToGoogleSheets(userData);
+      chat.insertAdjacentHTML(
+        "beforeend",
+        `<div class="model"><p>Would you like to know about our services or ask something else?</p></div>`
+      );
+      document.querySelectorAll(".course-widget").forEach(el => el.remove());
       chat.scrollTop = chat.scrollHeight;
     });
   });
@@ -245,28 +256,34 @@ function showCourseOptions() {
 
 /* --------- Show service options --------- */
 function showServiceOptions() {
-  if (document.querySelector('.service-widget')) return;
-  const chat = document.querySelector('.chat-window .chat');
-  let html = `<div class="model service-widget"><p>Select a service you’re interested in:</p><form id="serviceForm">`;
+  if (document.querySelector(".service-widget")) return;
+  const chat = document.querySelector(".chat-window .chat");
+  let html = `<div class="model service-widget"><p>Select a service you’re interested in:</p>`;
   servicesOffered.forEach(s => {
-    html += `<label><input type="checkbox" name="service" value="${escapeHTML(s.name)}"> ${escapeHTML(s.name)}</label><br>`;
+    html += `<label><input type="radio" name="service" value="${escapeHTML(s.name)}"> ${escapeHTML(s.name)}</label><br>`;
   });
-  html += `</form></div>`;
-  chat.insertAdjacentHTML('beforeend', html);
+  html += `</div>`;
+  chat.insertAdjacentHTML("beforeend", html);
 
-  // Auto-show details on selection
-  document.querySelectorAll('#serviceForm input[name="service"]').forEach(el => {
-    el.addEventListener('change', async () => {
-      const selected = Array.from(document.querySelectorAll('#serviceForm input[name="service"]:checked')).map(x => x.value);
-      userData.service = selected.join(', ');
-      let detailsHtml = '<div class="model"><p>';
-      selected.forEach(n => {
-        const info = (servicesOffered.find(s => s.name === n) || {}).details || 'Details coming soon.';
-        detailsHtml += `<b>${escapeHTML(n)}</b>: ${escapeHTML(info)}<br><br>`;
-      });
-      detailsHtml += '</p></div>';
-      chat.insertAdjacentHTML("beforeend", detailsHtml);
+  document.querySelectorAll('input[name="service"]').forEach(input => {
+    input.addEventListener("change", async e => {
+      const selected = e.target.value;
+      userData.service = selected;
+      const info =
+        (servicesOffered.find(s => s.name === selected) || {}).details ||
+        "Details coming soon.";
+      chat.insertAdjacentHTML(
+        "beforeend",
+        `<div class="model"><p><b>${escapeHTML(selected)}</b>: ${escapeHTML(
+          info
+        )}</p></div>`
+      );
       await sendToGoogleSheets(userData);
+      chat.insertAdjacentHTML(
+        "beforeend",
+        `<div class="model"><p>Would you like to know about our courses or ask something else?</p></div>`
+      );
+      document.querySelectorAll(".service-widget").forEach(el => el.remove());
       chat.scrollTop = chat.scrollHeight;
     });
   });
@@ -282,13 +299,16 @@ async function sendMessage() {
   if (!userMessage) return;
 
   inputBox.value = "";
-  chatContainer.insertAdjacentHTML("beforeend", `<div class="user"><p>${escapeHTML(userMessage)}</p></div>`);
+  chatContainer.insertAdjacentHTML(
+    "beforeend",
+    `<div class="user"><p>${escapeHTML(userMessage)}</p></div>`
+  );
   chatContainer.insertAdjacentHTML("beforeend", `<div class="loader"></div>`);
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   const lower = userMessage.toLowerCase();
 
-  // Strict phone/email enforcement
+  /* ---- STRICT CHECK: block everything until contact captured ---- */
   if (!userData.isDataCaptured) {
     const contactInfo = extractContactInfo(userMessage);
     if (contactInfo.phone) userData.phone = contactInfo.phone;
@@ -297,41 +317,96 @@ async function sendMessage() {
     if (userData.phone || userData.email) {
       userData.isDataCaptured = true;
       await sendToGoogleSheets(userData);
-      chatContainer.querySelector(".loader")?.remove();
-      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Thank you! How can I assist you further — with courses or services?</p></div>`);
-      return;
+      chatContainer.insertAdjacentHTML(
+        "beforeend",
+        `<div class="model"><p>Thank you! How can I assist you further — with courses or services?</p></div>`
+      );
     } else {
-      chatContainer.querySelector(".loader")?.remove();
-      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Please share your phone or email so I can assist you better:</p></div>`);
-      return; // Stop until valid info is provided
+      chatContainer.insertAdjacentHTML(
+        "beforeend",
+        `<div class="model"><p>Please share your phone or email first so I can assist you better.</p></div>`
+      );
     }
+
+    chatContainer.querySelector(".loader")?.remove();
+    return; // 🚫 stop here until contact is provided
   }
 
-  // Now handle after contact info
+  /* ---- From here on, user has provided contact ---- */
   if (lower.includes("course")) {
     showCourseOptions();
-    chatContainer.querySelector('.loader')?.remove();
+    chatContainer.querySelector(".loader")?.remove();
     return;
   }
 
   if (lower.includes("service")) {
     showServiceOptions();
-    chatContainer.querySelector('.loader')?.remove();
+    chatContainer.querySelector(".loader")?.remove();
     return;
   }
 
-  // Default fallback
-  chatContainer.querySelector(".loader")?.remove();
-  chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>I can help you with <b>courses</b> or <b>services</b>. Please type one.</p></div>`);
+  // Normal chat reply only after contact is captured
+  try {
+    const chat = model.startChat(messages);
+    let result = await chat.sendMessageStream(userMessage);
+
+    chatContainer.insertAdjacentHTML(
+      "beforeend",
+      `<div class="model"><p></p></div>`
+    );
+    const latestModelMsg = chatContainer.querySelectorAll(
+      ".chat-window .chat div.model"
+    );
+    const replyBox = latestModelMsg[latestModelMsg.length - 1].querySelector(
+      "p"
+    );
+
+    let firstChunk = true;
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      if (firstChunk) {
+        chatContainer.querySelector(".loader")?.remove();
+        firstChunk = false;
+      }
+      replyBox.insertAdjacentHTML("beforeend", escapeHTML(chunkText));
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    const botReply = replyBox.innerHTML;
+    messages.history.push({ role: "user", parts: [{ text: userMessage }] });
+    messages.history.push({ role: "model", parts: [{ text: botReply }] });
+  } catch (err) {
+    chatContainer.insertAdjacentHTML(
+      "beforeend",
+      `<div class="error"><p>Message failed. Please try again.</p></div>`
+    );
+    console.error(err);
+  } finally {
+    chatContainer.querySelector(".loader")?.remove();
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 }
 
 /* ----- events ----- */
-document.querySelector(".chat-window .input-area button").addEventListener("click", ()=>sendMessage());
-document.querySelector(".chat-window input").addEventListener("keypress", (e)=> { if(e.key === 'Enter') sendMessage(); });
-document.querySelector(".chat-button").addEventListener("click", ()=> {
+document
+  .querySelector(".chat-window .input-area button")
+  .addEventListener("click", () => sendMessage());
+
+document
+  .querySelector(".chat-window input")
+  .addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+document.querySelector(".chat-button").addEventListener("click", () => {
   document.querySelector("body").classList.add("chat-open");
   const chat = document.querySelector(".chat-window .chat");
   chat.innerHTML = `<div class="model"><p>Hi, how can I help you?</p></div>
                     <div class="model"><p>Please share your phone or email so I can assist you better:</p></div>`;
 });
-document.querySelector(".chat-window button.close").addEventListener("click", ()=> document.querySelector("body").classList.remove("chat-open"));
+
+document
+  .querySelector(".chat-window button.close")
+  .addEventListener("click", () =>
+    document.querySelector("body").classList.remove("chat-open")
+  );
