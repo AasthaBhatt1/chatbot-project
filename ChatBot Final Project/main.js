@@ -109,67 +109,57 @@ let userData = {
 const coursesOffered = [
   { 
     name: "Professional Makeup Course", 
-    details: `
-      A complete program designed for aspiring makeup artists. 
-      - Covers basics to advanced techniques (foundation, contour, highlighting, eye makeup, etc.)
-      - Bridal, party, and editorial looks
-      - Product knowledge and hygiene practices
-      - Portfolio-building with professional photoshoots
-      - Hands-on training with live models
-      - Includes certification for professional practice
-      Duration: 3–6 months (depending on batch)
-    `
+    details: `A complete program designed for aspiring makeup artists. 
+    - Covers basics to advanced techniques (foundation, contour, highlighting, eye makeup, etc.)
+    - Bridal, party, and editorial looks
+    - Product knowledge and hygiene practices
+    - Portfolio-building with professional photoshoots
+    - Hands-on training with live models
+    - Includes certification for professional practice
+    Duration: 3–6 months (depending on batch)`
   },
   { 
     name: "Professional Hairstyling Course", 
-    details: `
-      Focused training for hairstyling in bridal, fashion, and events. 
-      - Hair sectioning and setting
-      - Bridal buns, braids, curls, waves, and updos
-      - Heat styling with tools (curling irons, straighteners, blow dryers)
-      - Hair extensions and accessories
-      - Trend-based styling for shoots & events
-      Duration: 1–2 months
-      Certification included
-    `
+    details: `Focused training for hairstyling in bridal, fashion, and events. 
+    - Hair sectioning and setting
+    - Bridal buns, braids, curls, waves, and updos
+    - Heat styling with tools (curling irons, straighteners, blow dryers)
+    - Hair extensions and accessories
+    - Trend-based styling for shoots & events
+    Duration: 1–2 months
+    Certification included`
   },
   { 
     name: "SFX Course", 
-    details: `
-      Special Effects Makeup training for film, TV, and theatre. 
-      - Introduction to prosthetics, latex, and silicone
-      - Creating wounds, scars, burns, and fantasy characters
-      - Airbrushing for advanced effects
-      - Color theory for SFX realism
-      - Safe product usage for skin
-      Duration: 1–2 months
-      Perfect for students aiming at media/film industry
-    `
+    details: `Special Effects Makeup training for film, TV, and theatre. 
+    - Introduction to prosthetics, latex, and silicone
+    - Creating wounds, scars, burns, and fantasy characters
+    - Airbrushing for advanced effects
+    - Color theory for SFX realism
+    - Safe product usage for skin
+    Duration: 1–2 months
+    Perfect for students aiming at media/film industry`
   },
   { 
     name: "Personal Grooming Course", 
-    details: `
-      A short-term course designed for individuals who want to improve personal style. 
-      - Daily skincare routines
-      - Day & night self-makeup looks
-      - Hair care and basic styling
-      - Wardrobe & fashion styling tips
-      - Personality development & confidence building
-      Duration: 2–4 weeks
-    `
+    details: `A short-term course designed for individuals who want to improve personal style. 
+    - Daily skincare routines
+    - Day & night self-makeup looks
+    - Hair care and basic styling
+    - Wardrobe & fashion styling tips
+    - Personality development & confidence building
+    Duration: 2–4 weeks`
   },
   { 
     name: "Advanced Makeup Course", 
-    details: `
-      Designed for those who have completed a basic makeup program and want to master advanced techniques. 
-      - Bridal HD & Airbrush makeup
-      - Editorial, runway, and high-fashion looks
-      - Trend-based creative artistry
-      - Advanced contouring, highlighting, and corrective makeup
-      - Professional mentorship with industry experts
-      Duration: 2–3 months
-      Certification for advanced artistry
-    `
+    details: `Designed for those who have completed a basic makeup program and want to master advanced techniques. 
+    - Bridal HD & Airbrush makeup
+    - Editorial, runway, and high-fashion looks
+    - Trend-based creative artistry
+    - Advanced contouring, highlighting, and corrective makeup
+    - Professional mentorship with industry experts
+    Duration: 2–3 months
+    Certification for advanced artistry`
   }
 ];
 
@@ -226,22 +216,26 @@ async function sendToGoogleSheets(data) {
 function showCourseOptions() {
   if (document.querySelector('.course-widget')) return;
   const chat = document.querySelector('.chat-window .chat');
-  let html = `<div class="model course-widget"><p>Select a course you’re interested in:</p>`;
+  let html = `<div class="model course-widget"><p>Select a course you’re interested in:</p><form id="courseForm">`;
   coursesOffered.forEach(c => {
-    html += `<label><input type="radio" name="course" value="${escapeHTML(c.name)}"> ${escapeHTML(c.name)}</label><br>`;
+    html += `<label><input type="checkbox" name="course" value="${escapeHTML(c.name)}"> ${escapeHTML(c.name)}</label><br>`;
   });
-  html += `</div>`;
+  html += `</form></div>`;
   chat.insertAdjacentHTML('beforeend', html);
 
-  document.querySelectorAll('input[name="course"]').forEach(input => {
-    input.addEventListener('change', async (e) => {
-      const selected = e.target.value;
-      userData.course = selected;
-      const info = (coursesOffered.find(c => c.name === selected) || {}).details || "Details coming soon.";
-      chat.insertAdjacentHTML("beforeend", `<div class="model"><p><b>${escapeHTML(selected)}</b>: ${escapeHTML(info)}</p></div>`);
+  // Auto-show details on selection
+  document.querySelectorAll('#courseForm input[name="course"]').forEach(el => {
+    el.addEventListener('change', async () => {
+      const selected = Array.from(document.querySelectorAll('#courseForm input[name="course"]:checked')).map(x => x.value);
+      userData.course = selected.join(', ');
+      let detailsHtml = '<div class="model"><p>';
+      selected.forEach(n => {
+        const info = (coursesOffered.find(c => c.name === n) || {}).details || 'Details coming soon.';
+        detailsHtml += `<b>${escapeHTML(n)}</b>: ${escapeHTML(info)}<br><br>`;
+      });
+      detailsHtml += '</p></div>';
+      chat.insertAdjacentHTML("beforeend", detailsHtml);
       await sendToGoogleSheets(userData);
-      chat.insertAdjacentHTML("beforeend", `<div class="model"><p>Would you like to know about our services or ask something else?</p></div>`);
-      document.querySelectorAll('.course-widget').forEach(el => el.remove());
       chat.scrollTop = chat.scrollHeight;
     });
   });
@@ -253,22 +247,26 @@ function showCourseOptions() {
 function showServiceOptions() {
   if (document.querySelector('.service-widget')) return;
   const chat = document.querySelector('.chat-window .chat');
-  let html = `<div class="model service-widget"><p>Select a service you’re interested in:</p>`;
+  let html = `<div class="model service-widget"><p>Select a service you’re interested in:</p><form id="serviceForm">`;
   servicesOffered.forEach(s => {
-    html += `<label><input type="radio" name="service" value="${escapeHTML(s.name)}"> ${escapeHTML(s.name)}</label><br>`;
+    html += `<label><input type="checkbox" name="service" value="${escapeHTML(s.name)}"> ${escapeHTML(s.name)}</label><br>`;
   });
-  html += `</div>`;
+  html += `</form></div>`;
   chat.insertAdjacentHTML('beforeend', html);
 
-  document.querySelectorAll('input[name="service"]').forEach(input => {
-    input.addEventListener('change', async (e) => {
-      const selected = e.target.value;
-      userData.service = selected;
-      const info = (servicesOffered.find(s => s.name === selected) || {}).details || "Details coming soon.";
-      chat.insertAdjacentHTML("beforeend", `<div class="model"><p><b>${escapeHTML(selected)}</b>: ${escapeHTML(info)}</p></div>`);
+  // Auto-show details on selection
+  document.querySelectorAll('#serviceForm input[name="service"]').forEach(el => {
+    el.addEventListener('change', async () => {
+      const selected = Array.from(document.querySelectorAll('#serviceForm input[name="service"]:checked')).map(x => x.value);
+      userData.service = selected.join(', ');
+      let detailsHtml = '<div class="model"><p>';
+      selected.forEach(n => {
+        const info = (servicesOffered.find(s => s.name === n) || {}).details || 'Details coming soon.';
+        detailsHtml += `<b>${escapeHTML(n)}</b>: ${escapeHTML(info)}<br><br>`;
+      });
+      detailsHtml += '</p></div>';
+      chat.insertAdjacentHTML("beforeend", detailsHtml);
       await sendToGoogleSheets(userData);
-      chat.insertAdjacentHTML("beforeend", `<div class="model"><p>Would you like to know about our courses or ask something else?</p></div>`);
-      document.querySelectorAll('.service-widget').forEach(el => el.remove());
       chat.scrollTop = chat.scrollHeight;
     });
   });
@@ -290,74 +288,41 @@ async function sendMessage() {
 
   const lower = userMessage.toLowerCase();
 
-  // Lead capture first
+  // Strict phone/email enforcement
   if (!userData.isDataCaptured) {
     const contactInfo = extractContactInfo(userMessage);
     if (contactInfo.phone) userData.phone = contactInfo.phone;
     if (contactInfo.email) userData.email = contactInfo.email;
+
     if (userData.phone || userData.email) {
       userData.isDataCaptured = true;
       await sendToGoogleSheets(userData);
-      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Thank you! How can I assist you further — with courses or services?</p></div>`);
       chatContainer.querySelector(".loader")?.remove();
+      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Thank you! How can I assist you further — with courses or services?</p></div>`);
       return;
+    } else {
+      chatContainer.querySelector(".loader")?.remove();
+      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Please share your phone or email so I can assist you better:</p></div>`);
+      return; // Stop until valid info is provided
     }
   }
 
-  // Courses
+  // Now handle after contact info
   if (lower.includes("course")) {
-    if (!userData.isDataCaptured) {
-      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Please share your phone or email first.</p></div>`);
-      chatContainer.querySelector('.loader')?.remove();
-      return;
-    }
     showCourseOptions();
     chatContainer.querySelector('.loader')?.remove();
     return;
   }
 
-  // Services
   if (lower.includes("service")) {
-    if (!userData.isDataCaptured) {
-      chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>Please share your phone or email first.</p></div>`);
-      chatContainer.querySelector('.loader')?.remove();
-      return;
-    }
     showServiceOptions();
     chatContainer.querySelector('.loader')?.remove();
     return;
   }
 
-  // Normal chat reply
-  try {
-    const chat = model.startChat(messages);
-    let result = await chat.sendMessageStream(userMessage);
-    chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p></p></div>`);
-    const latestModelMsg = chatContainer.querySelectorAll(".chat-window .chat div.model");
-    const replyBox = latestModelMsg[latestModelMsg.length - 1].querySelector("p");
-
-    let firstChunk = true;
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (firstChunk) {
-        chatContainer.querySelector(".loader")?.remove();
-        firstChunk = false;
-      }
-      replyBox.insertAdjacentHTML("beforeend", escapeHTML(chunkText));
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    const botReply = replyBox.innerHTML;
-    messages.history.push({ role: "user", parts: [{ text: userMessage }] });
-    messages.history.push({ role: "model", parts: [{ text: botReply }] });
-
-  } catch (err) {
-    chatContainer.insertAdjacentHTML("beforeend", `<div class="error"><p>Message failed. Please try again.</p></div>`);
-    console.error(err);
-  } finally {
-    chatContainer.querySelector(".loader")?.remove();
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }
+  // Default fallback
+  chatContainer.querySelector(".loader")?.remove();
+  chatContainer.insertAdjacentHTML("beforeend", `<div class="model"><p>I can help you with <b>courses</b> or <b>services</b>. Please type one.</p></div>`);
 }
 
 /* ----- events ----- */
