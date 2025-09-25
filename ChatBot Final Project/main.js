@@ -557,7 +557,6 @@ document.querySelector(".chat-button").addEventListener("click", () => {
   document.querySelector("body").classList.add("chat-open");
   const chat = document.querySelector(".chat-window .chat");
   chat.innerHTML = `<div class="model"><p>Hi! Welcome to Farita Academy! </p></div>
-                    <div class="model"><p>I can help you with information about our makeup & hairstyling courses, beauty services, fees, and admissions.</p></div>
                     <div class="model"><p>Please share your phone or email so I can assist you better:</p></div>`;
 });
 
